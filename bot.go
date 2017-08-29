@@ -59,7 +59,13 @@ func main() {
 
 		case *slack.ReactionAddedEvent:
 			fmt.Printf("-------------\n")
-			fmt.Printf("Message: %+v\n", ev)
+			fmt.Printf("Reaction: %+v\n", ev)
+
+			if ev.Item.Timestamp != "" {
+				var m = messages[ev.Item.Timestamp]
+				m.emojiCount = m.emojiCount + 1
+				messages[ev.Item.Timestamp] = m
+			}
 
 		case *slack.InvalidAuthEvent:
 			fmt.Printf("Invalid credentials")
