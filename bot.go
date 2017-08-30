@@ -9,12 +9,16 @@ import (
 )
 
 type mesg struct {
-	text       	 string
-	channel_id 	 string
-	channel_name string
-	emojiCount   int
-	replyCount   int
-	timestamp    string
+	message_id    string
+	message_text  string
+	channel_id    string
+	channel_name  string
+	user_id       string
+	user_name     string
+	user_realname string
+	emojiCount    int
+	replyCount    int
+	timestamp     string
 }
 
 func main() {
@@ -41,14 +45,18 @@ func main() {
 					messages[ev.ThreadTimestamp] = m
 				} else {
 					channel, _ := api.GetChannelInfo(ev.Channel)
+					user, _ := api.GetUserInfo(ev.User)
 
 					messages[ev.Timestamp] = mesg{
-						text:       ev.Text,
-						replyCount: 0,
-						emojiCount: 0,
-						channel_id:		ev.Channel,
-						channel_name:		channel.Name,
-						timestamp:  ev.Timestamp,
+						message_text:  ev.Text,
+						replyCount:    0,
+						emojiCount:    0,
+						channel_id:    ev.Channel,
+						channel_name:  channel.Name,
+						user_id:       ev.User,
+						user_name:     user.Name,
+						user_realname: user.RealName,
+						timestamp:     ev.Timestamp,
 					}
 				}
 
@@ -95,9 +103,13 @@ func main() {
 func evaluateMessage(message mesg, rtm *slack.RTM) {
 	if message.emojiCount > 1 {
 		message_to_forward := rtm.NewOutgoingMessage(
-			fmt.Sprintf("There is an interesting message '%s' in #%s", message.text, message.channel_name),
+			fmt.Sprintf("There is an interesting message '%s' from %s in <#%s|%s>",
+				message.message_text,
+				message.user_realname,
+				message.channel_id,
+				message.channel_name),
 			os.Getenv("GOSSIPBOT_CHANNEL"))
 
 		rtm.SendMessage(message_to_forward)
-  }
+	}
 }
