@@ -9,16 +9,16 @@ import (
 )
 
 type mesg struct {
-	message_id    string
-	message_text  string
-	channel_id    string
-	channel_name  string
-	user_id       string
-	user_name     string
-	user_realname string
-	emojiCount    int
-	replyCount    int
-	timestamp     string
+	messageID    string
+	messageText  string
+	channelID    string
+	channelName  string
+	userID       string
+	username     string
+	userRealname string
+	emojiCount   int
+	replyCount   int
+	timestamp    string
 }
 
 func main() {
@@ -48,15 +48,15 @@ func main() {
 					user, _ := api.GetUserInfo(ev.User)
 
 					messages[ev.Timestamp] = mesg{
-						message_text:  ev.Text,
-						replyCount:    0,
-						emojiCount:    0,
-						channel_id:    ev.Channel,
-						channel_name:  channel.Name,
-						user_id:       ev.User,
-						user_name:     user.Name,
-						user_realname: user.RealName,
-						timestamp:     ev.Timestamp,
+						messageText:  ev.Text,
+						replyCount:   0,
+						emojiCount:   0,
+						channelID:    ev.Channel,
+						channelName:  channel.Name,
+						userID:       ev.User,
+						username:     user.Name,
+						userRealname: user.RealName,
+						timestamp:    ev.Timestamp,
 					}
 				}
 
@@ -73,13 +73,16 @@ func main() {
 			fmt.Printf("-------------\n")
 			fmt.Printf("Reaction: %+v\n", ev)
 
+			var m = messages[ev.Item.Timestamp]
 			if ev.Item.Timestamp != "" {
-				var m = messages[ev.Item.Timestamp]
 				m.emojiCount = m.emojiCount + 1
 				messages[ev.Item.Timestamp] = m
 			}
 
-			evaluateMessage(messages[ev.Item.Timestamp], rtm)
+			if isMessageInteresting(m) {
+				forwardMessage(m, rtm)
+			}
+
 		case *slack.ReactionRemovedEvent:
 			fmt.Printf("-------------\n")
 			fmt.Printf("Reaction removed: %+v\n", ev)
@@ -100,16 +103,21 @@ func main() {
 	}
 }
 
-func evaluateMessage(message mesg, rtm *slack.RTM) {
-	if message.emojiCount > 1 {
-		message_to_forward := rtm.NewOutgoingMessage(
-			fmt.Sprintf("There is an interesting message '%s' from %s in <#%s|%s>",
-				message.message_text,
-				message.user_realname,
-				message.channel_id,
-				message.channel_name),
-			os.Getenv("GOSSIPBOT_CHANNEL"))
+func isMessageInteresting(message mesg) bool {
+	return message.emojiCount > 1
+}
 
-		rtm.SendMessage(message_to_forward)
-	}
+func forwardMessage(message mesg, rtm *slack.RTM) {
+	messageToForward := rtm.NewOutgoingMessage(
+		fmt.Sprintf(
+			"There is an interesting message '%s' from %s in <#%s|%s>",
+			message.messageText,
+			message.userRealname,
+			message.channelID,
+			message.channelName,
+		),
+		os.Getenv("GOSSIPBOT_CHANNEL"),
+	)
+
+	rtm.SendMessage(messageToForward)
 }
