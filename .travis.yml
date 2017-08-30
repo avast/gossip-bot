@@ -3,5 +3,8 @@ sudo: required
 services:
   - docker
 
+before_install:
+  - sudo docker --version
+
 script:
   - sudo docker build -t buildimage .
