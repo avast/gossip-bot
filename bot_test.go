@@ -16,7 +16,7 @@ func TestEvaluate(t *testing.T) {
 		timestamp:    "timestamp",
 	}
 
-	if !isMessageInteresting(message) {
+	if !message.isMessageImportant() {
 		t.Fatalf("interesting message not marked as interesting")
 	}
 }
