@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/nlopes/slack"
 )
@@ -28,6 +29,10 @@ func main() {
 
 	rtm := api.NewRTM()
 	go rtm.ManageConnection()
+
+	info, _ := api.GetTeamInfo()
+	apiDomain := fmt.Sprintf("https://%s.slack.com", info.Domain)
+	archivesRootUrl := fmt.Sprintf("%s/archives", apiDomain)
 
 	messages := make(map[string]mesg, 0)
 
@@ -80,7 +85,7 @@ func main() {
 			}
 
 			if isMessageInteresting(m) {
-				forwardMessage(m, rtm)
+				forwardMessage(m, rtm, archivesRootUrl)
 			}
 
 		case *slack.ReactionRemovedEvent:
@@ -107,15 +112,13 @@ func isMessageInteresting(message mesg) bool {
 	return message.emojiCount > 1
 }
 
-func forwardMessage(message mesg, rtm *slack.RTM) {
+func forwardMessage(message mesg, rtm *slack.RTM, archivesUrl string) {
 	messageToForward := rtm.NewOutgoingMessage(
-		fmt.Sprintf(
-			"There is an interesting message '%s' from %s in <#%s|%s>",
-			message.messageText,
-			message.userRealname,
-			message.channelID,
-			message.channelName,
-		),
+		fmt.Sprintf("There is new interesting message %s", 
+			fmt.Sprintf("%s/%s/p%s", 
+				archivesUrl, 
+				message.channelName, 
+				strings.Replace(message.timestamp, ".", "", -1))),
 		os.Getenv("GOSSIPBOT_CHANNEL"),
 	)
 
