@@ -68,6 +68,15 @@ func main() {
 			}
 
 			evaluateMessage(messages[ev.Item.Timestamp], rtm)
+		case *slack.ReactionRemovedEvent:
+			fmt.Printf("-------------\n")
+			fmt.Printf("Reaction removed: %+v\n", ev)
+
+			if ev.Item.Timestamp != "" {
+				var m = messages[ev.Item.Timestamp]
+				m.emojiCount = m.emojiCount - 1
+				messages[ev.Item.Timestamp] = m
+			}
 
 		case *slack.InvalidAuthEvent:
 			fmt.Printf("Invalid credentials")
