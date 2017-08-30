@@ -31,8 +31,7 @@ func main() {
 	go rtm.ManageConnection()
 
 	info, _ := api.GetTeamInfo()
-	apiDomain := fmt.Sprintf("https://%s.slack.com", info.Domain)
-	archivesRootUrl := fmt.Sprintf("%s/archives", apiDomain)
+	archivesRootUrl := fmt.Sprintf("https://%s.slack.com/archives", info.Domain)
 
 	messages := make(map[string]mesg, 0)
 
@@ -114,11 +113,10 @@ func isMessageInteresting(message mesg) bool {
 
 func forwardMessage(message mesg, rtm *slack.RTM, archivesUrl string) {
 	messageToForward := rtm.NewOutgoingMessage(
-		fmt.Sprintf("There is new interesting message %s", 
-			fmt.Sprintf("%s/%s/p%s", 
+		fmt.Sprintf("There is new interesting message %s/%s/p%s", 
 				archivesUrl, 
 				message.channelName, 
-				strings.Replace(message.timestamp, ".", "", -1))),
+				strings.Replace(message.timestamp, ".", "", -1)),
 		os.Getenv("GOSSIPBOT_CHANNEL"),
 	)
 
