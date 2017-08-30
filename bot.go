@@ -29,6 +29,7 @@ func (message mesg) isMessageImportant() bool {
 
 func main() {
 	api := slack.New(os.Getenv("GOSSIPBOT_TOKEN"))
+	log.SetLevel(log.DebugLevel)
 
 	rtm := api.NewRTM()
 	go rtm.ManageConnection()
@@ -54,8 +55,14 @@ func main() {
 					m.replyCount = m.replyCount + 1
 					messages[ev.ThreadTimestamp] = m
 				} else {
-					channel, _ := api.GetChannelInfo(ev.Channel)
-					user, _ := api.GetUserInfo(ev.User)
+					channel, err := api.GetChannelInfo(ev.Channel)
+					if err != nil {
+						log.Fatal(err)
+					}
+					user, err := api.GetUserInfo(ev.User)
+					if err != nil {
+						log.Fatal(err)
+					}
 
 					messages[ev.Timestamp] = mesg{
 						messageText:  ev.Text,
