@@ -9,11 +9,12 @@ import (
 )
 
 type mesg struct {
-	text       string
-	channel 	 string
-	emojiCount int
-	replyCount int
-	timestamp  string
+	text       	 string
+	channel_id 	 string
+	channel_name string
+	emojiCount   int
+	replyCount   int
+	timestamp    string
 }
 
 func main() {
@@ -39,11 +40,14 @@ func main() {
 					m.replyCount = m.replyCount + 1
 					messages[ev.ThreadTimestamp] = m
 				} else {
+					channel, _ := api.GetChannelInfo(ev.Channel)
+
 					messages[ev.Timestamp] = mesg{
 						text:       ev.Text,
 						replyCount: 0,
 						emojiCount: 0,
-						channel:			ev.Channel,
+						channel_id:		ev.Channel,
+						channel_name:		channel.Name,
 						timestamp:  ev.Timestamp,
 					}
 				}
@@ -91,7 +95,7 @@ func main() {
 func evaluateMessage(message mesg, rtm *slack.RTM) {
 	if message.emojiCount > 1 {
 		message_to_forward := rtm.NewOutgoingMessage(
-			fmt.Sprintf("There is interesting message in: %s %s", message.text, message.channel),
+			fmt.Sprintf("There is an interesting message '%s' in #%s", message.text, message.channel_name),
 			os.Getenv("GOSSIPBOT_CHANNEL"))
 
 		rtm.SendMessage(message_to_forward)
