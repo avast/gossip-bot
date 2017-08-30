@@ -114,7 +114,38 @@ func processReactionAddedEvent(api *slack.Client, ev *slack.ReactionAddedEvent) 
 	log.Debug("-------------\n")
 	log.Debug("Reaction: %+v\n", ev)
 
-	var m = messages[ev.Item.Timestamp]
+	m, present := messages[ev.Item.Timestamp]
+	if !present {
+		foundMessages, err := api.GetChannelHistory(ev.Item.Channel, slack.HistoryParameters{Latest: ev.Item.Timestamp, Inclusive: true, Count: 1})
+		if err != nil {
+			log.Fatalf("%+v", err)
+		}
+		if (len(foundMessages.Messages) > 0) {
+			foundMessage := foundMessages.Messages[0]
+			user, err := api.GetUserInfo(foundMessage.User)
+				if err != nil {
+				log.Fatalf("%+v", err)
+			}
+			channel, err := api.GetChannelInfo(ev.Item.Channel)
+			if err != nil {
+				log.Fatalf("%+v", err)
+			}
+
+			messages[ev.Item.Timestamp] = mesg {
+				messageText:  foundMessage.Text,
+				replyCount:   foundMessage.ReplyCount,
+				emojiCount:   len(foundMessage.Reactions),
+				channelID:    ev.Item.Channel,
+				channelName:  channel.Name,
+				userID:       foundMessage.User,
+				username:     user.Name,
+				userRealname: user.RealName,
+				timestamp:    ev.Item.Timestamp,
+			}
+		} else {
+			fmt.Printf("Message not found when calling API with timestamp %s", ev.Item.Timestamp)
+		}
+	}
 	if ev.Item.Timestamp != "" {
 		m.emojiCount = m.emojiCount + 1
 		messages[ev.Item.Timestamp] = m
