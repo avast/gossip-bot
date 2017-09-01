@@ -37,12 +37,7 @@ func main() {
 
 	rtm := api.NewRTM()
 	go rtm.ManageConnection()
-
-	// var search, error2, error3 = api_client.Search("1504103389.000400", slack.SearchParameters{Count: 1})
-	// log.Debug(fmt.Sprintf("%+v", search))
-	// log.Debug(fmt.Sprintf("%+v", error2))
-	// log.Debug(fmt.Sprintf("%+v", error3))
-	//
+	
 	var history, error1 = api_client.GetChannelHistory(os.Getenv("GOSSIPBOT_CHANNEL"), slack.HistoryParameters{Count: 1})
 	log.Debug(fmt.Sprintf("%+v", history))
 	log.Debug(fmt.Sprintf("%+v", error1))
