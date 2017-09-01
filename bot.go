@@ -30,11 +30,22 @@ func (message mesg) isMessageImportant() bool {
 var messages map[string]mesg
 
 func main() {
-	api := slack.New(os.Getenv("GOSSIPBOT_TOKEN"))
+	api := slack.New(os.Getenv("GOSSIPBOT_BOT_TOKEN"))
+	api_client := slack.New(os.Getenv("GOSSIPBOT_CLIENT_TOKEN"))
+
 	log.SetLevel(log.DebugLevel)
 
 	rtm := api.NewRTM()
 	go rtm.ManageConnection()
+
+	// var search, error2, error3 = api_client.Search("1504103389.000400", slack.SearchParameters{Count: 1})
+	// log.Debug(fmt.Sprintf("%+v", search))
+	// log.Debug(fmt.Sprintf("%+v", error2))
+	// log.Debug(fmt.Sprintf("%+v", error3))
+	//
+	var history, error1 = api_client.GetChannelHistory(os.Getenv("GOSSIPBOT_CHANNEL"), slack.HistoryParameters{Count: 1})
+	log.Debug(fmt.Sprintf("%+v", history))
+	log.Debug(fmt.Sprintf("%+v", error1))
 
 	info, err := api.GetTeamInfo()
 	if err != nil {
@@ -120,10 +131,10 @@ func processReactionAddedEvent(api *slack.Client, ev *slack.ReactionAddedEvent) 
 		if err != nil {
 			log.Fatalf("%+v", err)
 		}
-		if (len(foundMessages.Messages) > 0) {
+		if len(foundMessages.Messages) > 0 {
 			foundMessage := foundMessages.Messages[0]
 			user, err := api.GetUserInfo(foundMessage.User)
-				if err != nil {
+			if err != nil {
 				log.Fatalf("%+v", err)
 			}
 			channel, err := api.GetChannelInfo(ev.Item.Channel)
@@ -131,7 +142,7 @@ func processReactionAddedEvent(api *slack.Client, ev *slack.ReactionAddedEvent) 
 				log.Fatalf("%+v", err)
 			}
 
-			messages[ev.Item.Timestamp] = mesg {
+			messages[ev.Item.Timestamp] = mesg{
 				messageText:  foundMessage.Text,
 				replyCount:   foundMessage.ReplyCount,
 				emojiCount:   len(foundMessage.Reactions),
