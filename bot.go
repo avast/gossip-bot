@@ -37,10 +37,6 @@ func main() {
 
 	rtm := api.NewRTM()
 	go rtm.ManageConnection()
-	
-	var history, error1 = api_client.GetChannelHistory(os.Getenv("GOSSIPBOT_CHANNEL"), slack.HistoryParameters{Count: 1})
-	log.Debug(fmt.Sprintf("%+v", history))
-	log.Debug(fmt.Sprintf("%+v", error1))
 
 	info, err := api.GetTeamInfo()
 	if err != nil {
@@ -60,7 +56,7 @@ func main() {
 			processMessageEvent(api, ev)
 
 		case *slack.ReactionAddedEvent:
-			processReactionAddedEvent(api, ev)
+			processReactionAddedEvent(api_client, ev)
 			if m := messages[ev.EventTimestamp]; m.isMessageImportant() {
 				forwardMessage(m, rtm, archivesRootURL)
 			}
