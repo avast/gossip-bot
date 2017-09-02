@@ -24,6 +24,7 @@ type mesg struct {
 }
 
 func (message mesg) isMessageImportant() bool {
+	log.Debug("Emoji count: %d", message.emojiCount)
 	return message.emojiCount > 1
 }
 
@@ -57,7 +58,7 @@ func main() {
 
 		case *slack.ReactionAddedEvent:
 			processReactionAddedEvent(api_client, ev)
-			if m := messages[ev.EventTimestamp]; m.isMessageImportant() {
+			if m := messages[ev.Item.Timestamp]; m.isMessageImportant() {
 				forwardMessage(m, rtm, archivesRootURL)
 			}
 
@@ -120,23 +121,23 @@ func processReactionAddedEvent(api *slack.Client, ev *slack.ReactionAddedEvent) 
 	if !present {
 		foundMessages, err := api.GetChannelHistory(ev.Item.Channel, slack.HistoryParameters{Latest: ev.Item.Timestamp, Inclusive: true, Count: 1})
 		if err != nil {
-			log.Fatalf("%+v", err)
+			log.Fatalf("Error when getting channel history: %+v", err)
 		}
 		if len(foundMessages.Messages) > 0 {
 			foundMessage := foundMessages.Messages[0]
 			user, err := api.GetUserInfo(foundMessage.User)
 			if err != nil {
-				log.Fatalf("%+v", err)
+				log.Fatalf("Error when getting user info: %+v", err)
 			}
 			channel, err := api.GetChannelInfo(ev.Item.Channel)
 			if err != nil {
-				log.Fatalf("%+v", err)
+				log.Fatalf("Error when getting channel info: %+v", err)
 			}
 
 			messages[ev.Item.Timestamp] = mesg{
 				messageText:  foundMessage.Text,
 				replyCount:   foundMessage.ReplyCount,
-				emojiCount:   len(foundMessage.Reactions),
+				emojiCount:   countReactions(foundMessage.Reactions),
 				channelID:    ev.Item.Channel,
 				channelName:  channel.Name,
 				userID:       foundMessage.User,
@@ -145,13 +146,22 @@ func processReactionAddedEvent(api *slack.Client, ev *slack.ReactionAddedEvent) 
 				timestamp:    ev.Item.Timestamp,
 			}
 		} else {
-			fmt.Printf("Message not found when calling API with timestamp %s", ev.Item.Timestamp)
+			log.Fatalf("Message not found when calling API with timestamp %s", ev.Item.Timestamp)
+		}
+	} else {
+		if ev.Item.Timestamp != "" {
+			m.emojiCount = m.emojiCount + 1
+			messages[ev.Item.Timestamp] = m
 		}
 	}
-	if ev.Item.Timestamp != "" {
-		m.emojiCount = m.emojiCount + 1
-		messages[ev.Item.Timestamp] = m
+}
+
+func countReactions(reactions []slack.ItemReaction) int {
+	totalCount := 0
+	for _, reaction := range reactions {
+		totalCount = totalCount + reaction.Count
 	}
+	return totalCount
 }
 
 func processReactionRemovedEvent(api *slack.Client, ev *slack.ReactionRemovedEvent) {
